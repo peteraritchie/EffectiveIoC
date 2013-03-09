@@ -10,6 +10,8 @@ I recently [blogged](http://bit.ly/Zm1vIM) about Dependency Injection where I de
 
 EffectiveIoC is intended to be an easy-to-use IoC container that promotes DI-friendly design.  So, EffectiveIoC really only supports contructor injection.  It supports generics and open generics.
 
+It follows the philosphy of *use what's available* (no custom config section) and *KISS* (a static IoC class with only two methods).
+
 ###Usage
 Mappings can be performed in app.config via <see cref="T:System.Configuration.NameValueSectionHandler"/>.  For example
 ```XML
