@@ -3,6 +3,14 @@ EffectiveIoC
 
 Bare-bones Inversion of Control container
 
+This project is basically the outcome of a short spike to get inversion of control with little or no fuss.  I felt that most IoC controllers, as powerful and useful as they were, were more complicated to learn and config than it seemed writing a useful IoC would be.  The results of my tweets RE IoC in < 60 lines.
+
+###Philosophy
+I recently [blogged](http://bit.ly/Zm1vIM) about Dependency Injection where I detailed some of my thoughts on the complexity that manu IoC containers tend to promote.
+
+EffectiveIoC is intended to be an easy-to-use IoC container that promotes DI-friendly design.  So, EffectiveIoC really only supports contructor injection.  It supports generics and open generics.
+
+###Usage
 Mappings can be performed in app.config via <see cref="T:System.Configuration.NameValueSectionHandler"/>.  For example
 ```XML
 <configSections>
