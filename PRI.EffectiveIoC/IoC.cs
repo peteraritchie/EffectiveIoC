@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.Configuration;
 using System.Linq;
 using System.Reflection;
+using PRI.ProductivityExtensions.ReflectionExtensions;
 
 namespace PRI.EffectiveIoC
 {
@@ -60,16 +61,13 @@ namespace PRI.EffectiveIoC
 			{
 				return TypeMappings[type];
 			}
-			if (type.IsGenericType && !type.ContainsGenericParameters && TypeMappings.ContainsKey(type.GetGenericTypeDefinition()))
+			if (type.IsGenericType && !type.ContainsGenericParameters &&
+			    TypeMappings.ContainsKey(type.GetGenericTypeDefinition()))
 			{
 				var realType = TypeMappings[type.GetGenericTypeDefinition()];
 				if (realType.ContainsGenericParameters && !type.ContainsGenericParameters)
 				{
-#if NET_4_5
-					return realType.MakeGenericType(type.GenericTypeArguments);
-#elif NET_4_0
-					return realType.MakeGenericType(type.GetGenericArguments());
-#endif
+					return realType.MakeGenericType(type.GetGenericTypeArguments());
 				}
 				return realType;
 			}
@@ -84,11 +82,11 @@ namespace PRI.EffectiveIoC
 			{
 				if (String.IsNullOrWhiteSpace(fromTypeText)) continue;
 				var fromType = Type.GetType(fromTypeText) ??
-							   Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(assType => assType.Name == fromTypeText);
+				               Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(assType => assType.Name == fromTypeText);
 				if (fromType == null) continue;
 				var toTypeText = collection[fromTypeText];
 				var toType = Type.GetType(toTypeText) ??
-							   Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(assType => assType.Name == toTypeText);
+				             Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(assType => assType.Name == toTypeText);
 				if (toType == null) continue;
 				TypeMappings.Add(fromType, toType);
 			}
@@ -116,11 +114,10 @@ namespace PRI.EffectiveIoC
 		/// </example>
 		public static T Resolve<T>()
 		{
-			return (T)Resolve(typeof(T));
+			return (T) Resolve(typeof (T));
 		}
 
-		[ThreadStatic]
-		private static readonly Stack<Type> ResolveStack;
+		[ThreadStatic] private static readonly Stack<Type> ResolveStack;
 
 		static IoC()
 		{
@@ -162,8 +159,8 @@ namespace PRI.EffectiveIoC
 				// go through each constructor looking for one where
 				// we know how to instantiate all the types
 				foreach (var constructor in t.GetConstructors(BindingFlags.Instance | BindingFlags.Public)
-											 .OrderBy(e => e.GetParameters().Length)
-											 .Select(e => e))
+				                             .OrderBy(e => e.GetParameters().Length)
+				                             .Select(e => e))
 				{
 					var paramTypes = constructor.GetParameters().Select(e => FindType(e.ParameterType)).ToArray();
 					if (paramTypes.Any(e => e == null)) continue;
@@ -193,9 +190,13 @@ namespace PRI.EffectiveIoC
 		/// </example>
 		public static void RegisterType(Type @from, Type to)
 		{
-			if(!@from.IsAssignableFrom(to)) throw new InvalidOperationException(string.Format("type {0} is not assignable to {1}", @to.Name, from.Name));
 			if (@from == null) throw new ArgumentNullException("from");
 			if (to == null) throw new ArgumentNullException("to");
+			if ((@from.IsOpenGenericType() || !@from.IsAssignableFrom(to)) &&
+			    !to.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == @from))
+			{
+				throw new InvalidOperationException(string.Format("type {0} is not assignable to {1}", @to.Name, @from.Name));
+			}
 			if (!TypeMappings.ContainsKey(@from)) TypeMappings.Add(@from, to);
 		}
 

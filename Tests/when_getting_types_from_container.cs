@@ -25,7 +25,7 @@ namespace Tests
 		[Fact]
 		public void then_resolving_instance_of_unmapped_type_results_with_null()
 		{
-			var instance = IoC.Resolve<IList<int>>();
+			var instance = IoC.Resolve<System.Collections.Generic.ISet<int>>();
 			Assert.Null(instance);
 		}
 
@@ -74,11 +74,25 @@ namespace Tests
 			Assert.NotNull(instance);
 			Assert.IsType<List<int>>(instance);
 		}
+
 		[Fact]
 		public void then_resolving_closed_generic_with_open_generic_registration_succeeds()
 		{
 			IoC.RegisterType(typeof(IList<>), typeof(List<>));
 			IoC.Resolve<IList<int>>();
+		}
+
+		[Fact]
+		public void then_resolving_closed_generic_with_incompatible_closed_generic_registration_fails()
+		{
+			IoC.RegisterType(typeof(IGeneric<>), typeof(GenericImplementation<string>));
+			Assert.Throws<InvalidCastException>(() => IoC.Resolve<IGeneric<int>>());
+		}
+
+		[Fact]
+		public void then_registering_incompatible_open_generics_fails()
+		{
+			Assert.Throws<InvalidOperationException>(()=>IoC.RegisterType(typeof(IList<>), typeof(HashSet<>)));
 		}
 
 		[Fact]

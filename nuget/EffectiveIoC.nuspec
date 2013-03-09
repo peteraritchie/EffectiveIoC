@@ -2,15 +2,18 @@
 <package >
   <metadata>
     <id>EffectiveIoC</id>
-    <version>1.0.2.0</version>
+    <version>1.0.4.0</version>
     <authors>Peter Ritchie</authors>
     <owners>Peter Ritchie</owners>
     <licenseUrl>https://raw.github.com/peteraritchie/EffectiveIoC/master/LICENSE</licenseUrl>
     <projectUrl>https://raw.github.com/peteraritchie/EffectiveIoC</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Bare-bones Inversion of Control container</description>
-    <releaseNotes>Included .NET 4 support</releaseNotes>
+    <releaseNotes>Fixed some open generic resolution bugs.</releaseNotes>
     <copyright>Copyright 2013</copyright>
+    <dependencies>
+      <dependency id="ProductivityExtensions" version="1.0.8.0"/>
+    </dependencies>
     <tags>IoC Dependency Inversion</tags>
   </metadata>
 </package>
