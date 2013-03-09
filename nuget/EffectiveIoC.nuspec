@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>EffectiveIoC</id>
+    <version>1.0.2.0</version>
+    <authors>Peter Ritchie</authors>
+    <owners>Peter Ritchie</owners>
+    <licenseUrl>https://raw.github.com/peteraritchie/EffectiveIoC/master/LICENSE</licenseUrl>
+    <projectUrl>https://raw.github.com/peteraritchie/EffectiveIoC</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Bare-bones Inversion of Control container</description>
+    <releaseNotes>Included .NET 4 support</releaseNotes>
+    <copyright>Copyright 2013</copyright>
+    <tags>IoC Dependency Inversion</tags>
+  </metadata>
+</package>

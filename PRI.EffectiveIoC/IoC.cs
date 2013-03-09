@@ -13,22 +13,22 @@ namespace PRI.EffectiveIoC
 	/// <remarks>
 	/// Mappings can be performed in app.config via <see cref="System.Configuration.NameValueSectionHandler"/>.  For example
 	/// <c>
-  	/// {configSections}
-  	///     {section name="types" type="System.Configuration.NameValueSectionHandler"/}
-  	///   {/configSections}
-  	///   {types}
-  	///     {add
-  	///       key="Tests.TestDoubles.IInterface, Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-  	///       value="Tests.TestDoubles.InterfaceImplementation, Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/}
-  	///     {add
-  	///       key="System.Collections.Generic.ICollection`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]"
-  	///       value="System.Collections.Generic.List`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]"/}
-  	///     {add
-  	///       key="System.Collections.Generic.IEnumerable`1, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-  	///       value="System.Collections.Generic.List`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]"/}
-  	///     {add
-  	///       key="System.IFormattable, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-  	///       value="TestTypes.Class1, TestTypes, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/}
+	/// {configSections}
+	///     {section name="types" type="System.Configuration.NameValueSectionHandler"/}
+	///   {/configSections}
+	///   {types}
+	///     {add
+	///       key="Tests.TestDoubles.IInterface, Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+	///       value="Tests.TestDoubles.InterfaceImplementation, Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/}
+	///     {add
+	///       key="System.Collections.Generic.ICollection`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]"
+	///       value="System.Collections.Generic.List`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]"/}
+	///     {add
+	///       key="System.Collections.Generic.IEnumerable`1, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+	///       value="System.Collections.Generic.List`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]"/}
+	///     {add
+	///       key="System.IFormattable, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+	///       value="TestTypes.Class1, TestTypes, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/}
 	///   {/types}
 	/// </c>
 	/// </remarks>
@@ -65,7 +65,11 @@ namespace PRI.EffectiveIoC
 				var realType = TypeMappings[type.GetGenericTypeDefinition()];
 				if (realType.ContainsGenericParameters && !type.ContainsGenericParameters)
 				{
+#if NET_4_5
 					return realType.MakeGenericType(type.GenericTypeArguments);
+#elif NET_4_0
+					return realType.MakeGenericType(type.GetGenericArguments());
+#endif
 				}
 				return realType;
 			}
