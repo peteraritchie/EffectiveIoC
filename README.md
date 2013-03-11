@@ -87,7 +87,7 @@ var instance = ioc.Resolve<List<int>>("myIntList");
 
 You can also register instances in code, which is useful if their construction is complex:
 ```C#
-ioc.RegisterInstance(new Person("Peter", "Ritchie), "peter");
+ioc.RegisterInstance(new Person("Peter", "Ritchie"), "peter");
 ```
 
 and then be resolved in the same way as instance registered in config:
