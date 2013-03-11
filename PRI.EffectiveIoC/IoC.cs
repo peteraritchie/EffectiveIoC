@@ -84,12 +84,9 @@ namespace PRI.EffectiveIoC
 				if (typesNameValueCollection == null)
 					throw new InvalidOperationException("types config section was of expected type.");
 
-				foreach (var t in from e in typesNameValueCollection.Cast<string>()
-				                  where !String.IsNullOrWhiteSpace(e)
-				                  let fromType = Type.GetType(e)
-				                  where fromType != null
-				                  let toType = Type.GetType(typesNameValueCollection[e])
-				                  where toType != null
+				foreach (var t in from e in typesNameValueCollection.Cast<string>() where !String.IsNullOrWhiteSpace(e)
+				                  let fromType = Type.GetType(e) where fromType != null
+				                  let toType = Type.GetType(typesNameValueCollection[e]) where toType != null
 				                  select new {fromType, toType}) typeMappings.Add(t.fromType, t.toType);
 			}
 			section = ConfigurationManager.GetSection("instances");
