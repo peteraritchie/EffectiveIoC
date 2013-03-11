@@ -12,7 +12,7 @@ EffectiveIoC is intended to be an easy-to-use IoC container that promotes DI-fri
 
 It follows the philosophies of:
  - *Use what's available* (no custom config section)
- - *KISS* (a static IoC class with only two methods).
+ - *KISS* (only six methods)
  - Don't try to be everything to everyone and end up being mediocre at everything
 
 So, EffectiveIoC doesn't make you include a custom configuration section into your app.config and thus doesn't make you learn how to use a new configuration section.  It just uses the built-in `NamedValueCollection`.  (See below)
@@ -21,7 +21,7 @@ So, EffectiveIoC doesn't make you include a custom configuration section into yo
 EffectiveIoC is not meant to replace existing IoC containers.  EffectiveIoC had some simple requirements:
 - Resolution of types not necessarily in current AppDomain
 - Simple app.config configuration (see above)
-- Supprt constructor dependency injection
+- Support constructor dependency injection
 - Resolution of instances by name
 - Creation of closed generic type instances from open generic type mappings 
 - Time-boxed to less than a week of work
