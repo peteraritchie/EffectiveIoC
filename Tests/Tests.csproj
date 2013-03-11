@@ -47,6 +47,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TestDoubles\DelegateBase.cs" />
+    <Compile Include="TestDoubles\DelegateSuper.cs" />
     <Compile Include="TestDoubles\GenericImplementation.cs" />
     <Compile Include="TestDoubles\IGeneric.cs" />
     <Compile Include="when_getting_types_from_container.cs" />

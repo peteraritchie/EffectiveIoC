@@ -50,6 +50,12 @@
     <Compile Include="..\Tests\TestDoubles\CircularDependant2.cs">
       <Link>TestDoubles\CircularDependant2.cs</Link>
     </Compile>
+    <Compile Include="..\Tests\TestDoubles\DelegateBase.cs">
+      <Link>TestDoubles\DelegateBase.cs</Link>
+    </Compile>
+    <Compile Include="..\Tests\TestDoubles\DelegateSuper.cs">
+      <Link>TestDoubles\DelegateSuper.cs</Link>
+    </Compile>
     <Compile Include="..\Tests\TestDoubles\DependantOne.cs">
       <Link>TestDoubles\DependantOne.cs</Link>
     </Compile>
