@@ -38,7 +38,7 @@ namespace PRI.EffectiveIoC
 	/// <code>
 	/// IEnumerable{int} instance = IoC.Resolve{IEnumerable{int}}();
 	/// </code>
-	/// Alternatively we could manually register a mapping with the <see cref="IoC.RegisterType{TFrom, TTo}"/> method.  For example:
+	/// Alternatively we could manually register a mapping with the <see cref="IoC.RegisterType{TFrom, TTo}()"/> method.  For example:
 	/// <code>
 	/// IoC.RegisterType(typeof(IList{}), typeof(List{}));
 	/// </code>
@@ -47,133 +47,104 @@ namespace PRI.EffectiveIoC
 	/// IoC.Resolve{IList{int}}();
 	/// </code>
 	/// </example>
-	public static class IoC
+	public class IoC
 	{
-		private static bool initialized;
-		private static readonly Dictionary<Type, Type> TypeMappings = new Dictionary<Type, Type>();
+		private bool initialized;
+		private readonly Dictionary<Type, Type> typeMappings = new Dictionary<Type, Type>();
 
-		private static Type FindType(Type type)
+		private Type FindType(Type @from)
 		{
-			if (type == null) throw new ArgumentNullException("type");
+			if (@from == null) throw new ArgumentNullException("from");
 			if (initialized == false) LoadMappingsFromConfig();
 
-			if (TypeMappings.ContainsKey(type))
+			if (typeMappings.ContainsKey(@from))
 			{
-				return TypeMappings[type];
+				return typeMappings[@from];
 			}
-			if (type.IsGenericType && !type.ContainsGenericParameters &&
-			    TypeMappings.ContainsKey(type.GetGenericTypeDefinition()))
+			if (@from.IsGenericType && !@from.ContainsGenericParameters &&
+			    typeMappings.ContainsKey(@from.GetGenericTypeDefinition()))
 			{
-				var realType = TypeMappings[type.GetGenericTypeDefinition()];
-				if (realType.ContainsGenericParameters && !type.ContainsGenericParameters)
+				var realType = typeMappings[@from.GetGenericTypeDefinition()];
+				if (realType.ContainsGenericParameters && !@from.ContainsGenericParameters)
 				{
-					return realType.MakeGenericType(type.GetGenericTypeArguments());
+					return realType.MakeGenericType(@from.GetGenericTypeArguments());
 				}
 				return realType;
 			}
-			return type;
+			return @from;
 		}
 
-		private static void LoadMappingsFromConfig()
+		private void LoadMappingsFromConfig()
 		{
-			var collection = ConfigurationManager.GetSection("types") as NameValueCollection;
-			if (collection == null) throw new InvalidOperationException("types config section was not of expected type.");
-			foreach (string fromTypeText in collection)
-			{
-				if (String.IsNullOrWhiteSpace(fromTypeText)) continue;
-				var fromType = Type.GetType(fromTypeText) ??
-				               Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(assType => assType.Name == fromTypeText);
-				if (fromType == null) continue;
-				var toTypeText = collection[fromTypeText];
-				var toType = Type.GetType(toTypeText) ??
-				             Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(assType => assType.Name == toTypeText);
-				if (toType == null) continue;
-				TypeMappings.Add(fromType, toType);
-			}
-			initialized = true;
+			var typesNameValueCollection = ConfigurationManager.GetSection("types") as NameValueCollection;
+			if (typesNameValueCollection == null) throw new InvalidOperationException("types config section was not found or not of expected type.");
+
+			foreach (var t in from e in typesNameValueCollection.Cast<string>() where !String.IsNullOrWhiteSpace(e) let fromType = Type.GetType(e)
+			                  where fromType != null let toType = Type.GetType(typesNameValueCollection[e]) where toType != null
+			                  select new {fromType, toType}) typeMappings.Add(t.fromType, t.toType);
+
+			var instancesNameValueCollection = ConfigurationManager.GetSection("instances") as NameValueCollection;
+			if (instancesNameValueCollection == null) throw new InvalidOperationException("instances config section was not found or not of expected type.");
+
+			foreach (var t in from name in instancesNameValueCollection.Cast<string>()
+							  where !string.IsNullOrWhiteSpace(name)
+							  let type = Type.GetType(instancesNameValueCollection[name])
+							  where type != null
+							  select new { name, type }) namedInstances.Add(t.name, CreateInstance(t.type, t.type));
+
+				initialized = true;
+		}
+
+		private readonly Stack<Type> resolveStack;
+
+		public IoC()
+		{
+			resolveStack = new Stack<Type>();
 		}
 
 		/// <summary>
-		/// Create new instance of <typeparam name="T">type</typeparam>
+		/// Create new instance of <paramref name="from">type</paramref>
 		/// </summary>
 		/// <remarks>
-		/// If no type is registered for <typeparam name="T">type</typeparam> and T is not an interface
-		/// not an abstract class, an instance of <typeparam name="T"></typeparam> will be created.
+		/// If no type is registered for <paramref name="from"/> and <paramref name="from"/> is not an interface
+		/// not an abstract class, an instance of <paramref name="from"/> will be created.
 		/// The constructor with the least number of parameters will be chosen.
-		/// Each type of parameter will be resolved via <see cref="IoC.Resolve"/>
+		/// Each type of parameter will be resolved via <see cref="IoC.Resolve(Type)"/>
 		/// </remarks>
-		/// <seealso cref="IoC.Resolve"/>
-		/// <typeparam name="T"></typeparam>
-		/// <returns>Instance of <typeparam name="T"/> or null if type is abstract or an interface and no mapping exists.</returns>
-		/// <exception cref="CircularDependencyException">If a circular dependency exists attempting to instiate the mapped type.</exception>
-		/// <example>
-		/// <code>
-		///	IoC.RegisterType(typeof(IList{}), typeof(List{}));
-		///	var listOfInt = IoC.Resolve{IList{int}}();
-		/// </code>
-		/// </example>
-		public static T Resolve<T>()
-		{
-			return (T) Resolve(typeof (T));
-		}
-
-		[ThreadStatic] private static readonly Stack<Type> ResolveStack;
-
-		static IoC()
-		{
-			ResolveStack = new Stack<Type>();
-		}
-
-		/// <summary>
-		/// Create new instance of <paramref name="type">type</paramref>
-		/// </summary>
-		/// <remarks>
-		/// If no type is registered for <paramref name="type"/> and <paramref name="type"/> is not an interface
-		/// not an abstract class, an instance of <paramref name="type"/> will be created.
-		/// The constructor with the least number of parameters will be chosen.
-		/// Each type of parameter will be resolved via <see cref="IoC.Resolve"/>
-		/// </remarks>
-		/// <seealso cref="IoC.Resolve"/>
-		/// <param name="type">Type to resolve.</param>
-		/// <returns>Instance of <paramref name="type"/> or null if type is abstract or an interface and no mapping exists.</returns>
+		/// <seealso cref="IoC.Resolve&lt;T&gt;()"/>
+		/// <param name="from">Type to resolve.</param>
+		/// <returns>Instance of <paramref name="from"/> or null if type is abstract or an interface and no mapping exists.</returns>
 		/// <exception cref="CircularDependencyException">If a circulat dependency exists attempting to instiate the mapped type.</exception>
-		/// <exception cref="ArgumentNullException">if <paramref name="type"/> is null.</exception>
+		/// <exception cref="ArgumentNullException">if <paramref name="from"/> is null.</exception>
 		/// <example>
 		/// <code>
 		///	IoC.RegisterType{IList{}, List{}}();
 		///	var listOfInt = IoC.Resolve(typeof(IList{int}));
 		/// </code>
 		/// </example>
-		public static object Resolve(Type type)
+		public object Resolve(Type @from)
 		{
-			if (type == null) throw new ArgumentNullException("type");
-
-			if (ResolveStack.Contains(type)) throw new CircularDependencyException("Circular dependency during resolve.");
-			ResolveStack.Push(type);
+			if (@from == null) throw new ArgumentNullException("from");
+			if (funcs.ContainsKey(@from)) return funcs[@from](@from);
+			KeyValuePair<Type, Func<Type, object>> x = funcs.FirstOrDefault(kvp => @from.IsGenericType && @from.GetGenericTypeDefinition() == kvp.Key);
+			if (!x.Equals(default(KeyValuePair<Type, Func<Type, object>>))) return funcs[@from.GetGenericTypeDefinition()](@from);
+			if (resolveStack.Contains(@from)) throw new CircularDependencyException("Circular dependency during resolve.");
+			resolveStack.Push(@from);
 
 			try
 			{
-				var t = FindType(type);
+				var t = FindType(@from);
 				if (t.IsInterface || t.IsAbstract) return null;
 
-				// go through each constructor looking for one where
-				// we know how to instantiate all the types
-				foreach (var constructor in t.GetConstructors(BindingFlags.Instance | BindingFlags.Public)
-				                             .OrderBy(e => e.GetParameters().Length)
-				                             .Select(e => e))
-				{
-					var paramTypes = constructor.GetParameters().Select(e => FindType(e.ParameterType)).ToArray();
-					if (paramTypes.Any(e => e == null)) continue;
-					var objects = paramTypes.Select(Resolve).ToArray();
-					return Activator.CreateInstance(t, objects);
-				}
-				return null;
+				return CreateInstance(@from, t);
 			}
 			finally
 			{
-				ResolveStack.Pop();
+				resolveStack.Pop();
 			}
 		}
+
+		private readonly Dictionary<Type, Func<Type, object>> funcs = new Dictionary<Type, Func<Type, object>>();
 
 		/// <summary>
 		/// Registers type <param name="to"/> for requested instances of <paramref name="@from"/>
@@ -188,7 +159,7 @@ namespace PRI.EffectiveIoC
 		///	var listOfInt = IoC.Resolve{IList{int}}();
 		/// </code>
 		/// </example>
-		public static void RegisterType(Type @from, Type to)
+		public void RegisterType(Type @from, Type to)
 		{
 			if (@from == null) throw new ArgumentNullException("from");
 			if (to == null) throw new ArgumentNullException("to");
@@ -197,8 +168,34 @@ namespace PRI.EffectiveIoC
 			{
 				throw new InvalidOperationException(string.Format("type {0} is not assignable to {1}", @to.Name, @from.Name));
 			}
-			if (!TypeMappings.ContainsKey(@from)) TypeMappings.Add(@from, to);
+			if (!typeMappings.ContainsKey(@from)) typeMappings.Add(@from, to);
 		}
+
+		/// <summary>
+		/// Create new instance of <typeparam name="TFrom">type</typeparam>
+		/// </summary>
+		/// <remarks>
+		/// If no type is registered for <typeparam name="TFrom">type</typeparam> and T is not an interface
+		/// not an abstract class, an instance of <typeparam name="TFrom"></typeparam> will be created.
+		/// The constructor with the least number of parameters will be chosen.
+		/// Each type of parameter will be resolved via <see cref="IoC.Resolve(Type)"/>
+		/// </remarks>
+		/// <seealso cref="IoC.Resolve(Type)"/>
+		/// <typeparam name="TFrom"></typeparam>
+		/// <returns>Instance of <typeparam name="TFrom"/> or null if type is abstract or an interface and no mapping exists.</returns>
+		/// <exception cref="CircularDependencyException">If a circular dependency exists attempting to instiate the mapped type.</exception>
+		/// <example>
+		/// <code>
+		///	IoC.RegisterType(typeof(IList{}), typeof(List{}));
+		///	var listOfInt = IoC.Resolve{IList{int}}();
+		/// </code>
+		/// </example>
+		public TFrom Resolve<TFrom>()
+		{
+			return (TFrom) Resolve(typeof (TFrom));
+		}
+
+		private readonly Dictionary<Tuple<string, Type>, Type> namedTypes = new Dictionary<Tuple<string, Type>, Type>();
 
 		/// <summary>
 		/// Registers type <typeparamref name="TTo"/> for requested instancee of <typeparamref name="TFrom"/>
@@ -212,9 +209,73 @@ namespace PRI.EffectiveIoC
 		///	var listOfInt = IoC.Resolve(typeof(IList{int}));
 		/// </code>
 		/// </example>
-		public static void RegisterType<TFrom, TTo>()
+		public void RegisterType<TFrom, TTo>()
 		{
 			RegisterType(typeof (TFrom), typeof (TTo));
+		}
+
+		public T Resolve<T>(string name)
+		{
+			return (T) Resolve(typeof (T), name);
+		}
+
+		public object Resolve(Type @from, string name)
+		{
+			if(!initialized) LoadMappingsFromConfig();
+			if (namedInstances.ContainsKey(name))
+			{
+				return namedInstances[name];
+			}
+			var key = new Tuple<string, Type>(name, @from);
+			if (namedTypes.ContainsKey(key))
+				return CreateInstance(@from, namedTypes[key]);
+
+			return null;
+		}
+
+		public void RegisterType<TFrom, TTo>(string name)
+		{
+			RegisterType(typeof(TFrom), typeof(TTo), name);
+		}
+
+		public Dictionary<string, object> namedInstances = new Dictionary<string, object>();
+
+		public void RegisterInstance(object instance, string name)
+		{
+			if (instance == null) throw new ArgumentNullException("instance");
+			if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException("name");
+			namedInstances.Add(name, instance);
+		}
+
+		public void RegisterType(Type typeFrom, Type typeTo, string name)
+		{
+			namedTypes.Add(new Tuple<String, Type>(name, typeFrom), typeTo);
+		}
+
+		public void RegisterTypeFunc(Type @from, Func<Type, object> func)
+		{
+			funcs.Add(@from, func);
+		}
+
+		private object CreateInstance(Type type, Type to)
+		{
+			if (to.ContainsGenericParameters && !type.ContainsGenericParameters)
+			{
+				to = to.MakeGenericType(type.GetGenericTypeArguments());
+			}
+
+			// go through each constructor looking for one where
+			// we know how to instantiate all the types
+			foreach (var constructor in to.GetConstructors(BindingFlags.Instance | BindingFlags.Public)
+										 .OrderBy(e => e.GetParameters().Length)
+										 .Select(e => e))
+			{
+				var paramTypes = constructor.GetParameters().Select(e => FindType(e.ParameterType)).ToArray();
+				if (paramTypes.Any(e => e == null)) continue;
+				var objects = paramTypes.Select(Resolve).ToArray();
+				return Activator.CreateInstance(to, objects);
+			}
+			return null;
 		}
 	}
 }
