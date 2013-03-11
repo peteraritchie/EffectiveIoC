@@ -76,23 +76,36 @@ namespace PRI.EffectiveIoC
 
 		private void LoadMappingsFromConfig()
 		{
-			var typesNameValueCollection = ConfigurationManager.GetSection("types") as NameValueCollection;
-			if (typesNameValueCollection == null) throw new InvalidOperationException("types config section was not found or not of expected type.");
+			var section = ConfigurationManager.GetSection("types");
 
-			foreach (var t in from e in typesNameValueCollection.Cast<string>() where !String.IsNullOrWhiteSpace(e) let fromType = Type.GetType(e)
-			                  where fromType != null let toType = Type.GetType(typesNameValueCollection[e]) where toType != null
-			                  select new {fromType, toType}) typeMappings.Add(t.fromType, t.toType);
+			if (section != null)
+			{
+				var typesNameValueCollection = section as NameValueCollection;
+				if (typesNameValueCollection == null)
+					throw new InvalidOperationException("types config section was of expected type.");
 
-			var instancesNameValueCollection = ConfigurationManager.GetSection("instances") as NameValueCollection;
-			if (instancesNameValueCollection == null) throw new InvalidOperationException("instances config section was not found or not of expected type.");
+				foreach (var t in from e in typesNameValueCollection.Cast<string>()
+				                  where !String.IsNullOrWhiteSpace(e)
+				                  let fromType = Type.GetType(e)
+				                  where fromType != null
+				                  let toType = Type.GetType(typesNameValueCollection[e])
+				                  where toType != null
+				                  select new {fromType, toType}) typeMappings.Add(t.fromType, t.toType);
+			}
+			section = ConfigurationManager.GetSection("instances");
+			if (section != null)
+			{
+				var instancesNameValueCollection = section as NameValueCollection;
+				if (instancesNameValueCollection == null)
+					throw new InvalidOperationException("instances config section was not of expected type.");
 
-			foreach (var t in from name in instancesNameValueCollection.Cast<string>()
-							  where !string.IsNullOrWhiteSpace(name)
-							  let type = Type.GetType(instancesNameValueCollection[name])
-							  where type != null
-							  select new { name, type }) namedInstances.Add(t.name, CreateInstance(t.type, t.type));
-
-				initialized = true;
+				foreach (var t in from name in instancesNameValueCollection.Cast<string>()
+				                  where !string.IsNullOrWhiteSpace(name)
+				                  let type = Type.GetType(instancesNameValueCollection[name])
+				                  where type != null
+				                  select new {name, type}) namedInstances.Add(t.name, CreateInstance(t.type, t.type));
+			}
+			initialized = true;
 		}
 
 		private readonly Stack<Type> resolveStack;
