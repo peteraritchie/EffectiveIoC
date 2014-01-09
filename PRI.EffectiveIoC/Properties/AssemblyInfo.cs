@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Peter Ritchie")]
 [assembly: AssemblyProduct("PRI.EffectiveIoC")]
-[assembly: AssemblyCopyright("Copyright © Peter Ritchie 2013")]
+[assembly: AssemblyCopyright("Copyright © Peter Ritchie 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

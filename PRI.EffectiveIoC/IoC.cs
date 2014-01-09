@@ -19,8 +19,8 @@ namespace PRI.EffectiveIoC
 	///   {/configSections}
 	///   {types}
 	///     {add
-	///       key="Tests.TestDoubles.IInterface, Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-	///       value="Tests.TestDoubles.InterfaceImplementation, Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/}
+	///       key="Tests.TestDoubles.IInterface, Tests, Version=1.1.0.0, Culture=neutral, PublicKeyToken=null"
+	///       value="Tests.TestDoubles.InterfaceImplementation, Tests, Version=1.1.0.0, Culture=neutral, PublicKeyToken=null"/}
 	///     {add
 	///       key="System.Collections.Generic.ICollection`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]"
 	///       value="System.Collections.Generic.List`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]"/}
@@ -29,7 +29,7 @@ namespace PRI.EffectiveIoC
 	///       value="System.Collections.Generic.List`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]"/}
 	///     {add
 	///       key="System.IFormattable, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-	///       value="TestTypes.Class1, TestTypes, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/}
+	///       value="TestTypes.Class1, TestTypes, Version=1.1.0.0, Culture=neutral, PublicKeyToken=null"/}
 	///   {/types}
 	/// </c>
 	/// </remarks>
@@ -83,11 +83,13 @@ namespace PRI.EffectiveIoC
 				var typesNameValueCollection = section as NameValueCollection;
 				if (typesNameValueCollection == null)
 					throw new InvalidOperationException("types config section was of expected type.");
-
-				foreach (var t in from e in typesNameValueCollection.Cast<string>() where !String.IsNullOrWhiteSpace(e)
-				                  let fromType = Type.GetType(e) where fromType != null
-				                  let toType = Type.GetType(typesNameValueCollection[e]) where toType != null
-				                  select new {fromType, toType}) typeMappings.Add(t.fromType, t.toType);
+				const bool throwOnError = true;
+				foreach (var typeMapping in from fromTypeName in typesNameValueCollection.Cast<string>()
+				                            where !String.IsNullOrWhiteSpace(fromTypeName)
+				                            let fromType = Type.GetType(fromTypeName, throwOnError)
+				                            let toType = Type.GetType(typesNameValueCollection[fromTypeName], throwOnError)
+				                            select new {fromType, toType})
+					typeMappings.Add(typeMapping.fromType, typeMapping.toType);
 			}
 			section = ConfigurationManager.GetSection("instances");
 			if (section != null)
